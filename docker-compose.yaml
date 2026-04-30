@@ -1,17 +1,17 @@
 services:
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: AIECOM
-    command: >
+  web:                                                         # Defines a service named "web" (your Django app)
+    build:                                                     
+      context: .                                               # Build context → current directory (where Dockerfile is present)
+      dockerfile: Dockerfile                                   # Specifies which Dockerfile to use
+    container_name: AIECOM                                     # Custom name for the container
+    command: >                                                 # Command executed when container starts
       sh -c "python manage.py migrate &&
              python manage.py collectstatic --noinput &&
              python manage.py runserver 0.0.0.0:8000"
     env_file:
-      - .env
+      - .env                                                   # Loads environment variables from .env file (DB creds, secrets, etc.)
     ports:
-      - "8000:8000"
-    restart: always
+      - "8000:8000"                                            # Maps host port 8000 → container port 8000
+    restart: always                                            # Automatically restart container if it crashes or stops
     volumes:
-      - .:/app
+      - .:/app                                                 # Mounts current directory into container at /app (for live code updates)
