@@ -1,0 +1,45 @@
+trigger:
+  branches:
+    include:
+      - main
+
+variables:
+  imageName: vanishadeb/ecom-ai
+  tag: $(Build.BuildId)
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+- stage: Build
+  jobs:
+  - job: DockerBuildPush
+    steps:
+    - script: |
+        docker builder prune -a -f
+      displayName: 'Cleanup Docker Build Cache'
+    
+    - checkout: self
+
+    - script: |
+        docker system prune -af
+        docker builder prune -af
+        sudo rm -rf /var/lib/apt/lists/*
+        sudo rm -rf /tmp/*
+      displayName: 'Full Disk Cleanup'
+
+    - task: Docker@2
+      displayName: Build & Push Image
+      inputs:
+        command: buildAndPush
+        containerRegistry: dockerhub-conn
+        repository: $(imageName)
+        dockerfile: AIECOM/Dockerfile
+        buildContext: AIECOM
+        tags: |
+          $(tag)
+          latest
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: $(Pipeline.Workspace)
+        artifact: drop
