@@ -1,45 +1,45 @@
 trigger:
   branches:
     include:
-      - main
+      - main                                       # Pipeline triggers automatically only when code is pushed to "main" branch
 
 variables:
-  imageName: vanishadeb/ecom-ai
-  tag: $(Build.BuildId)
+  imageName: vanishadeb/ecom-ai                    # Docker image name (Docker Hub repo)
+  tag: $(Build.BuildId)                            # Unique tag using build ID (ensures versioning)
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: ubuntu-latest                           # Uses Microsoft-hosted Ubuntu agent to run pipeline
 
 stages:
-- stage: Build
+- stage: Build                                     # Stage name → Build phase
   jobs:
-  - job: DockerBuildPush
+  - job: DockerBuildPush                           # Job name
     steps:
     - script: |
-        docker builder prune -a -f
+        docker builder prune -a -f                 # Removes unused build cache (frees space)
       displayName: 'Cleanup Docker Build Cache'
     
-    - checkout: self
+    - checkout: self                               # Pulls your repository code into the pipeline agent
 
     - script: |
-        docker system prune -af
-        docker builder prune -af
-        sudo rm -rf /var/lib/apt/lists/*
-        sudo rm -rf /tmp/*
+        docker system prune -af                    # Removes unused containers, images, networks
+        docker builder prune -af                   # Aggressively clears build cache again
+        sudo rm -rf /var/lib/apt/lists/*           # Clears apt cache
+        sudo rm -rf /tmp/*                         # Clears temp files to free disk space
       displayName: 'Full Disk Cleanup'
 
     - task: Docker@2
-      displayName: Build & Push Image
+      displayName: Build & Push Image              # Builds Docker image and pushes to registry
       inputs:
         command: buildAndPush
-        containerRegistry: dockerhub-conn
-        repository: $(imageName)
-        dockerfile: AIECOM/Dockerfile
-        buildContext: AIECOM
+        containerRegistry: dockerhub-conn          # Service connection to Docker Hub
+        repository: $(imageName)                   # Repo name (vanishadeb/ecom-ai)
+        dockerfile: AIECOM/Dockerfile              # Path to Dockerfile
+        buildContext: AIECOM                       # Directory used as build context
         tags: |
-          $(tag)
-          latest
+          $(tag)                                   # Unique tag (Build ID)
+          latest                                   # Also tag as "latest" for easy reference
     - task: PublishPipelineArtifact@1
       inputs:
-        targetPath: $(Pipeline.Workspace)
-        artifact: drop
+        targetPath: $(Pipeline.Workspace)          # Path of files to publish as artifact
+        artifact: drop                             # Default Artifact name (can be used in later stages like deploy)
